@@ -1,0 +1,16 @@
+{
+  "name": "High API error rate",
+  "description": "Gunakan ketika error rate API melewati threshold alert.",
+  "match_labels": {
+    "alertname": "APIHighErrorRate",
+    "service": "payments"
+  },
+  "steps": [
+    "Buka dashboard API payments",
+    "Periksa log aplikasi dan dependency",
+    "Periksa deployment terakhir",
+    "Rollback bila insiden dimulai setelah deployment"
+  ],
+  "severity": "critical",
+  "owner": "platform"
+}

@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 
 from . import db
 from .config import settings
+from .runbook_loader import load_file_runbooks
 from .services import fingerprint, process_event
 
 app = FastAPI(title="SRE Alert Brain", version="1.0.0")
@@ -23,6 +24,7 @@ class RunbookIn(BaseModel):
 @app.on_event("startup")
 def startup() -> None:
     db.init_db()
+    load_file_runbooks()
 
 
 @app.get("/healthz")
@@ -50,6 +52,11 @@ def runbooks() -> list[dict[str, Any]]:
 @app.post("/api/runbooks")
 def add_runbook(body: RunbookIn) -> dict[str, Any]:
     return db.create_runbook(body.model_dump())
+
+
+@app.post("/api/runbooks/reload")
+def reload_runbooks() -> dict[str, Any]:
+    return load_file_runbooks()
 
 
 @app.get("/api/events")

@@ -30,6 +30,7 @@ Alur webhook:
 - Background processing agar webhook cepat mengembalikan respons `202`.
 - Deduplication berdasarkan fingerprint alert.
 - Endpoint retry untuk event yang gagal.
+- Folder `runbooks/` untuk menyimpan runbook existing dalam format JSON.
 - Docker dan Docker Compose.
 
 ## Menjalankan dengan Docker
@@ -105,7 +106,32 @@ Untuk pengujian tanpa membuat task sungguhan:
 CLICKUP_DRY_RUN=true
 ```
 
-## Database runbook
+## Database dan file runbook
+
+Simpan runbook existing di folder [`runbooks/`](runbooks/). Setiap file `*.json` akan dimuat otomatis ke SQLite ketika service start. Contoh tersedia di [`runbooks/api-high-error-rate.json`](runbooks/api-high-error-rate.json).
+
+Format minimal:
+
+```json
+{
+  "name": "High API error rate",
+  "description": "Error rate API meningkat.",
+  "match_labels": {"alertname": "APIHighErrorRate", "service": "payments"},
+  "steps": ["Cek dashboard", "Periksa deployment terakhir"],
+  "severity": "critical",
+  "owner": "platform"
+}
+```
+
+Jika folder diubah saat container sedang berjalan, reload dengan:
+
+```bash
+curl -X POST http://localhost:8080/api/runbooks/reload
+```
+
+`match_labels` menggunakan exact match dan case-sensitive. File dengan `name` dan `match_labels` yang sama akan diperbarui, bukan diduplikasi.
+
+Runbook juga dapat ditambahkan melalui API:
 
 Tambahkan runbook melalui API:
 
@@ -151,6 +177,7 @@ Ollama hanya memperkaya task. Jika Ollama gagal, alert tetap diproses menggunaka
 | POST | `/webhooks/grafana` | Menerima alert Grafana |
 | GET | `/api/runbooks` | Melihat runbook aktif |
 | POST | `/api/runbooks` | Membuat runbook |
+| POST | `/api/runbooks/reload` | Memuat ulang file JSON pada folder `runbooks/` |
 | GET | `/api/events` | Melihat event terbaru |
 | POST | `/api/events/{event_id}/retry` | Mengirim ulang event ke ClickUp |
 
@@ -203,6 +230,9 @@ curl -X POST http://localhost:8080/api/events/<EVENT_ID>/retry
 |-- docs/
 |   |-- MANUAL_KONEKSI.md
 |   `-- Manual-Koneksi-SRE-Alert-Brain.pdf
+|-- runbooks/
+|   |-- README.md
+|   `-- api-high-error-rate.json
 |-- Dockerfile
 |-- docker-compose.yml
 `-- requirements.txt

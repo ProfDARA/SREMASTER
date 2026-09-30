@@ -9,6 +9,7 @@ load_dotenv()
 @dataclass(frozen=True)
 class Settings:
     database_path: str = os.getenv("DATABASE_PATH", "./sre-alert-brain.db")
+    runbooks_path: str = os.getenv("RUNBOOKS_PATH", "./runbooks")
     webhook_shared_secret: str = os.getenv("WEBHOOK_SHARED_SECRET", "")
     clickup_api_token: str = os.getenv("CLICKUP_API_TOKEN", "")
     clickup_list_id: str = os.getenv("CLICKUP_LIST_ID", "")

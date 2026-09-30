@@ -80,6 +80,34 @@ def create_runbook(data: dict[str, Any]) -> dict[str, Any]:
         return row_dict(conn.execute("SELECT * FROM runbooks WHERE id = ?", (cursor.lastrowid,)).fetchone())  # type: ignore[return-value]
 
 
+def upsert_runbook(data: dict[str, Any]) -> dict[str, Any]:
+    """Insert or update a file-backed runbook without creating duplicates."""
+    match_labels = json.dumps(data.get("match_labels", {}), sort_keys=True)
+    with connection() as conn:
+        existing = conn.execute(
+            "SELECT id FROM runbooks WHERE name = ? AND match_labels = ?",
+            (data["name"], match_labels),
+        ).fetchone()
+        values = (
+            data["name"], data.get("description", ""), match_labels,
+            json.dumps(data.get("steps", [])), data.get("severity", "warning"), data.get("owner", ""),
+        )
+        if existing:
+            conn.execute(
+                """UPDATE runbooks SET description = ?, match_labels = ?, steps = ?, severity = ?, owner = ?,
+                   enabled = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?""",
+                (values[1], values[2], values[3], values[4], values[5], existing["id"]),
+            )
+            runbook_id = existing["id"]
+        else:
+            cursor = conn.execute(
+                "INSERT INTO runbooks (name, description, match_labels, steps, severity, owner) VALUES (?, ?, ?, ?, ?, ?)",
+                values,
+            )
+            runbook_id = cursor.lastrowid
+        return row_dict(conn.execute("SELECT * FROM runbooks WHERE id = ?", (runbook_id,)).fetchone())  # type: ignore[return-value]
+
+
 def update_event(event_id: int, **fields: Any) -> dict[str, Any] | None:
     fields["updated_at"] = "CURRENT_TIMESTAMP"
     assignments = []

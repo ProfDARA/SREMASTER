@@ -7,6 +7,7 @@ services:
       - "8080:8080"
     volumes:
       - sre-alert-data:/data
+      - ./runbooks:/app/runbooks:ro
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/healthz')"]
       interval: 30s
